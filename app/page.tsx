@@ -40,6 +40,22 @@ export default function CompressorPage() {
   const [mode, setMode] = useState<"compress" | "decompress">("compress");
   const [format, setFormat] = useState<"ctx" | "toon">("ctx");
   const [suggestion, setSuggestion] = useState<{ better: "ctx" | "toon"; savingsDiff: string } | null>(null);
+  const [hoveredProfile, setHoveredProfile] = useState<string | null>(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  // Add global mouse listener for profile cursor effect
+  useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener("mousemove", handleGlobalMouseMove);
+    return () => window.removeEventListener("mousemove", handleGlobalMouseMove);
+  }, []);
+
+  const images = {
+    manas: "/authors/manas.jpg",
+    vinod: "/authors/vinod.jpg"
+  };
 
   // Initial demo data
   useEffect(() => {
@@ -449,7 +465,7 @@ export default function CompressorPage() {
   };
 
   return (
-    <main className="min-h-screen bg-grid flex flex-col items-center justify-start p-6 md:p-12 selection:bg-indigo-500/30">
+    <main className="min-h-screen bg-grid flex flex-col items-center justify-start p-4 pt-18 md:p-12 selection:bg-indigo-500/30">
       {/* Header section */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -460,17 +476,17 @@ export default function CompressorPage() {
           <div className="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-500/20">
             <Zap className="w-8 h-8 text-white fill-white" />
           </div>
-          <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-5xl">
             Context-Compressor
           </h1>
         </div>
-        <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+        <p className="text-slate-400 text-base md:text-lg max-w-2xl mx-auto px-4">
           High-density JSON compression for LLM-context pipelines. Optimized via <span className="text-indigo-400 font-semibold italic">CTX-Core</span> and structured <span className="text-sky-400 font-semibold italic">TOON</span> packetization.
         </p>
       </motion.div>
 
       {/* Main UI */}
-      <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch h-[600px] relative">
+      <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch lg:h-[600px] relative">
         {/* Input Panel */}
         <motion.div
           initial={{ opacity: 0, x: -50 }}
@@ -478,9 +494,11 @@ export default function CompressorPage() {
           className="flex flex-col gap-4 relative"
         >
           <div className="flex items-center justify-between">
-            <label className="text-slate-400 font-medium flex items-center gap-2">
-              <Layers className="w-4 h-4 text-indigo-400" />
-              {mode === "compress" ? "Input JSON" : "Compressed String"}
+            <label className="text-slate-400 font-medium flex items-center gap-1.5 whitespace-nowrap shrink-0">
+              <Layers className="w-3.5 h-3.5 md:w-4 md:h-4 text-indigo-400" />
+              <span className="text-xs md:text-sm">
+                {mode === "compress" ? "Input JSON" : "Compressed String"}
+              </span>
             </label>
             <div className="flex gap-2">
               <div className="flex bg-slate-800 rounded-full p-0.5 border border-slate-700 mr-2">
@@ -505,9 +523,10 @@ export default function CompressorPage() {
               </div>
               <button
                 onClick={toggleMode}
-                className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded-full border border-slate-700 transition"
+                className="text-[10px] md:text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 md:px-3 py-1 rounded-full border border-slate-700 transition"
               >
-                Switch to {mode === "compress" ? "Decompress" : "Compress"}
+                <span className="hidden sm:inline">Switch to </span>
+                {mode === "compress" ? "Decompress" : "Compress"}
               </button>
             </div>
           </div>
@@ -517,7 +536,7 @@ export default function CompressorPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={mode === "compress" ? "Paste your JSON here..." : "Paste CTX/2 string here..."}
-              className="flex-1 w-full bg-transparent p-6 font-mono text-sm text-indigo-100 placeholder:text-slate-600 outline-none resize-none"
+              className="flex-1 w-full bg-transparent p-4 md:p-6 font-mono text-sm text-indigo-100 placeholder:text-slate-600 outline-none resize-none min-h-[300px] lg:min-h-0"
             />
             {/* TOON Box / Footer info */}
             <div className="bg-slate-900/50 px-6 py-2 border-t border-white/5 flex items-center justify-between text-[10px] text-slate-500 font-mono tracking-wider uppercase">
@@ -540,6 +559,42 @@ export default function CompressorPage() {
             )}
           </div>
         </motion.div>
+
+        {/* Mobile Actions - only visible on small screens between Editor panels */}
+        <div className="flex lg:hidden flex-wrap gap-3 w-full">
+          <button
+            onClick={handleConvert}
+            className="flex-[2.5] flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 px-6 rounded-2xl shadow-xl shadow-indigo-500/20 active:scale-95 transition-all"
+          >
+            <span className="text-sm uppercase tracking-wide">
+              {mode === "compress" ? (format === "toon" ? "Run TOON" : "Compress") : "Reverse"}
+            </span>
+            <ArrowRight className={cn("w-5 h-5", mode === "decompress" && "rotate-180")} />
+          </button>
+
+          <button
+            onClick={() => {
+              if (!output) return;
+              setInput(output);
+              setOutput("");
+              setMode(mode === "compress" ? "decompress" : "compress");
+            }}
+            title="Swap"
+            className="flex-1 flex flex-col items-center justify-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 px-2 rounded-2xl border border-slate-700 active:scale-95 transition shadow-lg"
+          >
+            <ArrowRight className="w-5 h-5 rotate-90" />
+            <span className="text-[10px] font-black uppercase tracking-tighter">Swap</span>
+          </button>
+
+          <button
+            onClick={handleReset}
+            title="Reset"
+            className="flex-1 flex flex-col items-center justify-center gap-1 bg-slate-800 hover:bg-slate-700 text-rose-400/80 py-3 px-2 rounded-2xl border border-slate-700 active:scale-95 transition shadow-lg"
+          >
+            <RotateCcw className="w-5 h-5" />
+            <span className="text-[10px] font-black uppercase tracking-tighter">Clear</span>
+          </button>
+        </div>
 
         {/* Action Buttons (Floating in middle for larger screens) */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 hidden lg:flex flex-col items-center gap-6">
@@ -606,9 +661,11 @@ export default function CompressorPage() {
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <label className="text-slate-400 font-medium flex items-center gap-2">
-                <Cpu className="w-4 h-4 text-sky-400" />
-                {mode === "compress" ? (format === "ctx" ? "CTX/2 Result" : "TOON Result") : "Original JSON"}
+              <label className="text-slate-400 font-medium flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                <Cpu className="w-3.5 h-3.5 md:w-4 md:h-4 text-sky-400" />
+                <span className="text-xs md:text-sm">
+                  {mode === "compress" ? (format === "ctx" ? "CTX/2 Result" : "TOON Result") : "Original JSON"}
+                </span>
               </label>
               <div className={cn(
                 "text-[9px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider",
@@ -654,7 +711,7 @@ export default function CompressorPage() {
               readOnly
               value={output}
               placeholder="Result will appear here..."
-              className="w-full h-full bg-transparent p-6 font-mono text-sm text-sky-100 placeholder:text-slate-600 outline-none resize-none cursor-default"
+              className="w-full h-full bg-transparent p-4 md:p-6 font-mono text-sm text-sky-100 placeholder:text-slate-600 outline-none resize-none cursor-default min-h-[300px] lg:h-full"
             />
 
             <AnimatePresence>
@@ -706,7 +763,7 @@ export default function CompressorPage() {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
-            className="w-full max-w-7xl mt-12 grid grid-cols-1 md:grid-cols-4 gap-4"
+            className="w-full max-w-7xl mt-12 grid grid-cols-2 lg:grid-cols-4 gap-4"
           >
             <StatCard
               label="Original Size"
@@ -738,41 +795,15 @@ export default function CompressorPage() {
         )}
       </AnimatePresence>
 
-      {/* Mobile Actions - only visible on small screens */}
-      <div className="flex lg:hidden flex-wrap gap-4 mt-8 w-full max-w-md">
-        <button
-          onClick={handleConvert}
-          className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-6 rounded-2xl shadow-xl transition-all"
-        >
-          {mode === "compress" ? "Compress" : "Reverse"}
-          <ArrowRight className={cn("w-5 h-5", mode === "decompress" && "rotate-180")} />
-        </button>
-        <button
-          onClick={() => {
-            if (!output) return;
-            setInput(output);
-            setOutput("");
-            setMode(mode === "compress" ? "decompress" : "compress");
-          }}
-          className="flex items-center justify-center bg-slate-800 hover:bg-indigo-900/40 text-slate-400 py-3 px-6 rounded-2xl transition"
-        >
-          <ArrowRight className="w-5 h-5" />
-        </button>
-        <button
-          onClick={handleReset}
-          className="flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-400 py-3 px-6 rounded-2xl transition"
-        >
-          <RotateCcw className="w-5 h-5" />
-        </button>
-      </div>
 
-      <footer className="mt-24 w-full max-w-7xl border-t border-white/5 pt-12">
+
+      <footer className="mt-24 sm:mt-24 w-full max-w-7xl border-t border-white/5 ">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-white mb-2 bg-gradient-to-r from-amber-200 to-amber-500 bg-clip-text text-transparent">Features</h2>
           <div className="h-1 w-24 bg-amber-500 mx-auto rounded-full" />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-24">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 mb-24">
           <FeatureCard
             title="LLM-Ready Output"
             description="Specifically designed for passing large JSON data to models like GPT-4, Claude and Gemini while saving tokens."
@@ -795,18 +826,20 @@ export default function CompressorPage() {
           />
         </div>
 
-        <div className="flex flex-col items-center gap-10 mt-12 bg-slate-900/60 p-12 rounded-[2.5rem] border border-white/5 backdrop-blur-md shadow-2xl relative overflow-hidden group/footer">
+        <div className="flex flex-col items-center gap-10 mt-12 bg-slate-900/60 p-6 md:p-12 rounded-[2.5rem] border border-white/5 backdrop-blur-md shadow-2xl relative overflow-hidden group/footer">
           {/* Subtle background glow */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-indigo-500/10 blur-[100px] rounded-full opacity-0 group-hover/footer:opacity-100 transition-opacity duration-1000" />
 
-          <div className="flex flex-col items-center text-center gap-6 relative z-10 w-full">
+          <div className="flex flex-col items-center text-center gap-2 relative z-10 w-full">
             <div className="flex flex-col items-center gap-2">
-              <p className="text-slate-200 text-lg font-medium leading-relaxed max-w-lg">
+              <p className="text-slate-200 text-base md:text-lg font-medium leading-relaxed max-w-lg md:max-w-2xl">
                 This project uses <span className="text-white font-bold bg-indigo-500/20 px-2 py-0.5 rounded-lg border border-indigo-500/10">ctx algorithm</span> provided by{" "}
                 <a
                   href="https://www.linkedin.com/in/manas-mishra-768a7a24b"
                   target="_blank"
                   rel="noopener noreferrer"
+                  onMouseEnter={() => setHoveredProfile("manas")}
+                  onMouseLeave={() => setHoveredProfile(null)}
                   className="text-white hover:text-indigo-400 underline decoration-indigo-500/30 underline-offset-8 transition-all font-bold hover:decoration-indigo-400"
                 >
                   Manas Mishra
@@ -825,7 +858,7 @@ export default function CompressorPage() {
 
             <div className="h-px w-full max-w-[200px] bg-gradient-to-r from-transparent via-slate-700/50 to-transparent my-2" />
 
-            <div className="px-6 py-2 bg-slate-950/80 rounded-2xl border border-white/5 backdrop-blur-xl shadow-inner mt-4">
+            <div className="px-6 py-2 bg-slate-950/80 rounded-2xl border border-white/5 backdrop-blur-xl shadow-inner">
               <p className="text-slate-500 text-[9px] font-black uppercase tracking-[0.5em] text-center">
                 Context-Compressor • v1.4.0 • Technical LLM Utility
               </p>
@@ -840,6 +873,8 @@ export default function CompressorPage() {
               href="https://www.linkedin.com/in/vinod-tanwar-853976179"
               target="_blank"
               rel="noopener noreferrer"
+              onMouseEnter={() => setHoveredProfile("vinod")}
+              onMouseLeave={() => setHoveredProfile(null)}
               className="text-white hover:text-sky-400 font-bold underline decoration-sky-500/30 underline-offset-8 transition-all hover:decoration-sky-400"
             >
               Vinod
@@ -847,13 +882,40 @@ export default function CompressorPage() {
           </p>
         </div>
       </footer>
+
+      {/* Profile Cursor Preview */}
+      <AnimatePresence>
+        {hoveredProfile && (
+          <motion.div
+            className="fixed top-0 left-0 z-[100] pointer-events-none"
+            style={{
+              x: mousePos.x + 20,
+              y: mousePos.y - 120
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.5, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              transition={{ type: "spring", damping: 20, stiffness: 300, mass: 0.5 }}
+              className="w-24 h-24 rounded-2xl border-2 border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden glass p-1 backdrop-blur-xl"
+            >
+              <img
+                src={images[hoveredProfile as keyof typeof images]}
+                className="w-full h-full object-cover rounded-xl"
+                alt="Profile Preview"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
 
 function FeatureCard({ title, description, icon }: { title: string; description: string; icon: React.ReactNode }) {
   return (
-    <div className="glass p-8 rounded-3xl border border-white/5 hover:border-white/10 transition-all group">
+    <div className="glass p-6 md:p-8 rounded-3xl border border-white/5 hover:border-white/10 transition-all group">
       <div className="mb-4 bg-slate-800/50 w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
         {icon}
       </div>
@@ -903,7 +965,7 @@ function StatCard({
         <span className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">{label}</span>
         {icon}
       </div>
-      <div className="text-2xl font-bold text-white tracking-tight">{value}</div>
+      <div className="text-xl md:text-2xl font-bold text-white tracking-tight">{value}</div>
       {description && <div className="text-[10px] text-slate-500 mt-1">{description}</div>}
     </div>
   );
