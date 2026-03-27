@@ -446,6 +446,14 @@ export default function CompressorPage() {
           const restored = decompress(input);
           setOutput(JSON.stringify(restored, null, 2));
           setStatsData(null);
+          trigger("success");
+
+          // Mobile scroll for decompression
+          if (typeof window !== "undefined" && window.innerWidth < 1024) {
+            setTimeout(() => {
+              outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }, 100);
+          }
         } catch (e) {
           trigger("error");
           setError("Not a valid CTX/2 compressed string.");
