@@ -465,18 +465,18 @@ export default function CompressorPage() {
   };
 
   return (
-    <main className="min-h-screen bg-grid flex flex-col items-center justify-start p-4 pt-18 md:p-12 selection:bg-indigo-500/30">
+    <main className="min-h-screen bg-grid flex flex-col items-center justify-start p-4 pt-8 md:p-12 selection:bg-indigo-500/30">
       {/* Header section */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-7xl mb-12 text-center"
       >
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-500/20">
-            <Zap className="w-8 h-8 text-white fill-white" />
+        <div className="flex items-center justify-center gap-2 md:gap-3 mb-4">
+          <div className="bg-indigo-600 p-1.5 md:p-2 rounded-xl shadow-lg shadow-indigo-500/20">
+            <Zap className="w-6 h-6 md:w-8 md:h-8 text-white fill-white" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-5xl">
+          <h1 className="text-2xl min-[400px]:text-3xl sm:text-5xl font-bold tracking-tight text-white whitespace-nowrap">
             Context-Compressor
           </h1>
         </div>
