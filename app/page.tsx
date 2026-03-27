@@ -15,6 +15,7 @@ import {
   Layers
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useWebHaptics } from "web-haptics/react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -37,6 +38,7 @@ export default function CompressorPage() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [statsData, setStatsData] = useState<CompressionStats | null>(null);
+  const { trigger } = useWebHaptics();
   const [mode, setMode] = useState<"compress" | "decompress">("compress");
   const [format, setFormat] = useState<"ctx" | "toon">("ctx");
   const [suggestion, setSuggestion] = useState<{ better: "ctx" | "toon"; savingsDiff: string } | null>(null);
@@ -422,6 +424,7 @@ export default function CompressorPage() {
           setOutput(ctxStr);
           setStatsData(ctxStats as CompressionStats);
         }
+        trigger("success");
 
         // Generate suggestion if the other one is significantly better (>2% difference)
         if (format === "ctx" && toonSavingsNum > ctxSavingsNum + 2) {
@@ -436,10 +439,12 @@ export default function CompressorPage() {
           setOutput(JSON.stringify(restored, null, 2));
           setStatsData(null);
         } catch (e) {
+          trigger("error");
           setError("Not a valid CTX/2 compressed string.");
         }
       }
     } catch (err: any) {
+      trigger("error");
       setError(err.message || "An error occurred during processing.");
     }
   };
@@ -455,6 +460,7 @@ export default function CompressorPage() {
   const handleCopy = () => {
     if (!output) return;
     navigator.clipboard.writeText(output);
+    trigger("selection");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -503,7 +509,10 @@ export default function CompressorPage() {
             <div className="flex gap-2">
               <div className="flex bg-slate-800 rounded-full p-0.5 border border-slate-700 mr-2">
                 <button
-                  onClick={() => setFormat("ctx")}
+                  onClick={() => {
+                    setFormat("ctx");
+                    trigger("selection");
+                  }}
                   className={cn(
                     "text-[10px] px-3 py-1 rounded-full transition-all uppercase font-bold tracking-widest",
                     format === "ctx" ? "bg-indigo-600 text-white" : "text-slate-500 hover:text-slate-300"
@@ -512,7 +521,10 @@ export default function CompressorPage() {
                   CTX
                 </button>
                 <button
-                  onClick={() => setFormat("toon")}
+                  onClick={() => {
+                    setFormat("toon");
+                    trigger("nudge");
+                  }}
                   className={cn(
                     "text-[10px] px-3 py-1 rounded-full transition-all uppercase font-bold tracking-widest",
                     format === "toon" ? "bg-sky-600 text-white" : "text-slate-500 hover:text-slate-300"
