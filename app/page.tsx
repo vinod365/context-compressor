@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { compress, decompress, stats } from "ctx-compressor";
 import {
   ArrowRight,
@@ -34,6 +34,7 @@ interface CompressionStats {
 
 export default function CompressorPage() {
   const [input, setInput] = useState("");
+  const outputRef = useRef<HTMLDivElement>(null);
   const [output, setOutput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -426,6 +427,13 @@ export default function CompressorPage() {
         }
         trigger("success");
 
+        // Mobile scroll to results
+        if (typeof window !== "undefined" && window.innerWidth < 1024) {
+          setTimeout(() => {
+            outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }, 100);
+        }
+
         // Generate suggestion if the other one is significantly better (>2% difference)
         if (format === "ctx" && toonSavingsNum > ctxSavingsNum + 2) {
           setSuggestion({ better: "toon", savingsDiff: (toonSavingsNum - ctxSavingsNum).toFixed(1) });
@@ -523,7 +531,7 @@ export default function CompressorPage() {
                 <button
                   onClick={() => {
                     setFormat("toon");
-                    trigger("nudge");
+                    trigger("selection");
                   }}
                   className={cn(
                     "text-[10px] px-3 py-1 rounded-full transition-all uppercase font-bold tracking-widest",
@@ -667,6 +675,7 @@ export default function CompressorPage() {
 
         {/* Output Panel */}
         <motion.div
+          ref={outputRef}
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
           className="flex flex-col gap-4 relative"
