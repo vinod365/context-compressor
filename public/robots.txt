@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /authors/*.jpg
+Disallow: /authors/*.png
+Disallow: /authors/*.jpeg
+Allow: /
